@@ -205,10 +205,10 @@ Local<Value> valToString(MDB_val &data) {
     size_t n = data.mv_size / sizeof(uint16_t);
     
     // Check zero termination
-    if (n < 1 || buffer[n - 1] != 0) {
-        Nan::ThrowError("Invalid zero-terminated UTF-16 string");
-        return Nan::Undefined();
-    }
+    // if (n < 1 || buffer[n - 1] != 0) {
+    //     Nan::ThrowError("Invalid zero-terminated UTF-16 string");
+    //     return Nan::Undefined();
+    // }
     
     size_t length = n - 1;
     auto str = Nan::New<v8::String>(buffer, length);
@@ -298,7 +298,7 @@ CustomExternalStringResource::CustomExternalStringResource(MDB_val *val) {
     tmp[val->mv_size] = 0;
 
     // convert utf8 -> utf16
-    Local<String> jsString = Nan::New<String>(tmp).ToLocalChecked();
+    Local<String> jsString = Nan::New<String>(tmp).;
     delete [] tmp;
 
     // write into output buffer
