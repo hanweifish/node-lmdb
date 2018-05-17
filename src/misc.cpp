@@ -274,25 +274,47 @@ void consoleLogN(int n) {
 }
 
 void CustomExternalStringResource::writeTo(Handle<String> str, MDB_val *val) {
-    unsigned int l = str->Length() + 1;
-    uint16_t *d = new uint16_t[l];
-    str->Write(d);
-    d[l - 1] = 0;
+    String::Utf8Value utf8(str);
+    char *inp = *utf8;
+
+    int len = strlen(inp);
+    char *d = new char[len + 1];
+    strcpy(d, inp);
 
     val->mv_data = d;
-    val->mv_size = l * sizeof(uint16_t);
+    val->mv_size = len;
 }
+
+/*
+Reading string from LMDB.
+It will be utf-8 encoded, so decoding here into utf-16.
+*/
+
 
 CustomExternalStringResource::CustomExternalStringResource(MDB_val *val) {
-    // The UTF-16 data
-    this->d = (uint16_t*)(val->mv_data);
-    // Number of UTF-16 characters in the string
-    size_t n = val->mv_size / sizeof(uint16_t);
-    // Silently generate a 0 length if length invalid
-    this->l = n ? (n - 1) : 0;
+    // appending '\0' to input to feed into String::New
+    char *tmp = new char[val->mv_size + 1];
+    memcpy(tmp, val->mv_data, val->mv_size);
+    tmp[val->mv_size] = 0;
+
+    // convert utf8 -> utf16
+    Local<String> jsString = String::New(tmp);
+    delete [] tmp;
+
+    // write into output buffer
+    int len = jsString->Length();
+    uint16_t *d = new uint16_t[len + 1];
+
+    jsString->Write(d);
+
+    this->d = d;
+    this->l = len;
 }
 
-CustomExternalStringResource::~CustomExternalStringResource() { }
+CustomExternalStringResource::~CustomExternalStringResource() {
+    // TODO: alter this if zero-copy semantics is reintroduced above
+    delete [] d;
+}
 
 void CustomExternalStringResource::Dispose() {
     // No need to do anything, the data is owned by LMDB, not us
