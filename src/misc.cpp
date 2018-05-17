@@ -298,7 +298,7 @@ CustomExternalStringResource::CustomExternalStringResource(MDB_val *val) {
     tmp[val->mv_size] = 0;
 
     // convert utf8 -> utf16
-    Local<String> jsString = String::New(tmp);
+    Local<String> jsString = Nan::New<String>(tmp);
     delete [] tmp;
 
     // write into output buffer
